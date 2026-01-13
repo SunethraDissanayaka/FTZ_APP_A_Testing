@@ -409,7 +409,7 @@ if st.session_state.cta_open:
             "cta_phone": phone,
             "cta_message": message,
         })
-        st.success("✅ hank you! Your request has been received.\n\n"
+        st.success("✅ Thank you! Your request has been received.\n\n"
                 "Our FTZ advisory team will contact you shortly..")
         
 # -----------------------------
