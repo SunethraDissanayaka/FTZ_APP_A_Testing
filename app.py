@@ -176,7 +176,7 @@ st.subheader("Customer Data Assumptions")
 
 r1c1, r1c2, r1c3, r1c4, r1c5 = st.columns(5)
 shipments_per_week = r1c1.number_input("Shipments / Week", min_value=1, value=2)
-avg_import_value = r1c2.number_input("Avg Import Value ($)", 1000, value=50000, step=1000)
+avg_import_value = r1c2.number_input("Avg Import Value ($)", 1000, value=500000, step=1000)
 mpf_pct = r1c3.number_input("MPF %", value=0.35, disabled=True)
 broker_cost = r1c4.number_input("Broker Cost ($/entry)", value=125.0)
 current_interest_rate = r1c5.number_input("Current Interest Rate (%)", value=6.5)
