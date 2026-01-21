@@ -8,7 +8,7 @@ import difflib
 import uuid
 from datetime import datetime
 from zoneinfo import ZoneInfo
-
+#from utils import calculate_summary
 # =====================================================
 # GOOGLE SHEETS LOGGING (REPLACES LOCAL EXCEL)
 # =====================================================
@@ -149,9 +149,21 @@ h1,h2,h3 { color:#0f172a; }
 # -----------------------------
 # HEADER (UNCHANGED)
 # -----------------------------
+# st.markdown(
+#     "<h3 style='text-align:center;'>FTZ Savings – Agentic AI Calculator - A Testing</h3>",
+#     unsafe_allow_html=True
+# )
+
 st.markdown(
-    "<h3 style='text-align:center;'>FTZ Savings – Agentic AI Calculator - A Testing</h3>",
-    unsafe_allow_html=True
+    """
+    <h3 style="text-align:center;">
+        FTZ Savings – Agentic AI Calculator –
+        <span style="color:#2563eb; font-weight:700;">
+          A Testing
+        </span>
+    </h3>
+    """,
+unsafe_allow_html=True
 )
 
 left, center, right = st.columns([2, 1, 2])
@@ -169,38 +181,89 @@ ready to drive full spectrum of value unlocks through the FTZ apparel offering.
 
 st.markdown("---")
 
+defaults = {
+    "shipments_per_week": 2,
+    "avg_import_value": 500000,
+    "mpf_pct": 0.35,
+    "hmf_pct": 0.13,
+    "duty_pct": 30.0,
+    "export_pct": 1.0,
+    "offspec_pct": 0.25,
+    "broker_cost": 125.0,
+    "current_interest_rate": 6.5,
+    "avg_stock_holding_days": 45,
+    "ftz_consult": 50000,
+    "ftz_mgmt": 150000,
+    "ftz_software": 40000,
+    "ftz_bond": 1000,
+    "noftz_consult": 0,
+    "noftz_mgmt": 0,
+    "noftz_software": 0,
+    "noftz_bond": 0,
+}
+
+for key, value in defaults.items():
+    st.session_state.setdefault(key, value)
 # =====================================================
 # INPUTS (UNCHANGED)
 # =====================================================
 st.subheader("Customer Data Assumptions")
 
-r1c1, r1c2, r1c3, r1c4, r1c5 = st.columns(5)
-shipments_per_week = r1c1.number_input("Shipments / Week", min_value=1, value=2)
-avg_import_value = r1c2.number_input("Avg Import Value ($)", 1000, value=500000, step=1000)
-mpf_pct = r1c3.number_input("MPF %", value=0.35, disabled=True)
-broker_cost = r1c4.number_input("Broker Cost ($/entry)", value=125.0)
-current_interest_rate = r1c5.number_input("Current Interest Rate (%)", value=6.5)
+cols = st.columns(5)
+st.session_state["shipments_per_week"] = cols[0].number_input("Shipments / Week", 1, value=st.session_state["shipments_per_week"])
+st.session_state["avg_import_value"] = cols[1].number_input("Avg Import Value ($)", 1000, step=1000, value=st.session_state["avg_import_value"])
+#st.number_input("MPF %", value=st.session_state["mpf_pct"], disabled=True)
+cols[2].number_input("MPF %", value=st.session_state["mpf_pct"], disabled=True, key="mpf_pct")
 
-r2c1, r2c2, r2c3, r2c4, r2c5 = st.columns(5)
-export_pct = r2c1.number_input("Export %", 0.0, 100.0, 1.0)
-offspec_pct = r2c2.number_input("Off-Spec %", 0.0, 100.0, 0.25)
-hmf_pct = r2c3.number_input("HMF %", value=0.13, disabled=True)
-duty_pct = r2c4.number_input("Avg Duty %", 0.0, 100.0, 30.0)
-avg_stock_holding_days = r2c5.number_input("Avg # Stock Holding Days", value=45)
+st.session_state["broker_cost"] = cols[3].number_input("Broker Cost ($/entry)", value=st.session_state["broker_cost"])
+#st.session_state["current_interest_rate"] = cols[4].number_input("Current Interest Rate (%)", value=st.session_state["current_interest_rate"])
+st.session_state["current_interest_rate"] = cols[4].number_input("Cost of Capital", value=st.session_state["current_interest_rate"])
+
+
+cols2 = st.columns(5)
+st.session_state["export_pct"] = cols2[0].number_input("Export %", 0.0, 100.0, step=1.0, value=st.session_state["export_pct"])
+st.session_state["offspec_pct"] = cols2[1].number_input("Off-Spec %", 0.0, 100.0, step=0.01, value=st.session_state["offspec_pct"])
+cols2[2].number_input("HMF %", value=st.session_state["hmf_pct"], disabled=True)
+st.session_state["duty_pct"] = cols2[3].number_input("Avg Duty %", 0.0, 100.0, step=0.1, value=st.session_state["duty_pct"])
+st.session_state["avg_stock_holding_days"] = cols2[4].number_input("Avg Stock Holding Days (Days of Supply)", value=st.session_state["avg_stock_holding_days"])
 
 st.markdown("**Costs With FTZ (Annual)**")
 c1, c2, c3, c4 = st.columns(4)
-ftz_consult = c1.number_input("FTZ Consulting ($)", value=50000)
-ftz_mgmt = c2.number_input("FTZ Management ($)", value=150000)
-ftz_software = c3.number_input("FTZ Software Fee ($)", value=40000)
-ftz_bond = c4.number_input("FTZ Operator Bond ($)", value=1000)
+st.session_state["ftz_consult"] = c1.number_input("FTZ Consulting ($)", value=st.session_state["ftz_consult"])
+st.session_state["ftz_mgmt"] = c2.number_input("FTZ Management ($)", value=st.session_state["ftz_mgmt"])
+st.session_state["ftz_software"] = c3.number_input("FTZ Software Fee ($)", value=st.session_state["ftz_software"])
+st.session_state["ftz_bond"] = c4.number_input("FTZ Operator Bond ($)", value=st.session_state["ftz_bond"])
 
 st.markdown("**Costs Without FTZ (Annual)**")
 n1, n2, n3, n4 = st.columns(4)
-noftz_consult = n1.number_input("Consulting (No FTZ)", value=0)
-noftz_mgmt = n2.number_input("Management (No FTZ)", value=0)
-noftz_software = n3.number_input("Software (No FTZ)", value=0)
-noftz_bond = n4.number_input("Operator Bond (No FTZ)", value=0)
+st.session_state["noftz_consult"] = n1.number_input("Consulting (No FTZ)", value=st.session_state["noftz_consult"])
+st.session_state["noftz_mgmt"] = n2.number_input("Management (No FTZ)", value=st.session_state["noftz_mgmt"])
+st.session_state["noftz_software"] = n3.number_input("Software (No FTZ)", value=st.session_state["noftz_software"])
+st.session_state["noftz_bond"] = n4.number_input("Operator Bond (No FTZ)", value=st.session_state["noftz_bond"])
+
+# =====================================================
+# BIND LOCALS FOR CALCULATIONS (this is what was missing)
+# =====================================================
+shipments_per_week   = st.session_state["shipments_per_week"]
+avg_import_value     = st.session_state["avg_import_value"]
+mpf_pct              = st.session_state["mpf_pct"]
+hmf_pct              = st.session_state["hmf_pct"]
+duty_pct             = st.session_state["duty_pct"]
+export_pct           = st.session_state["export_pct"]
+offspec_pct          = st.session_state["offspec_pct"]
+broker_cost          = st.session_state["broker_cost"]
+current_interest_rate = st.session_state["current_interest_rate"]
+avg_stock_holding_days = st.session_state["avg_stock_holding_days"]
+
+ftz_consult   = st.session_state["ftz_consult"]
+ftz_mgmt      = st.session_state["ftz_mgmt"]
+ftz_software  = st.session_state["ftz_software"]
+ftz_bond      = st.session_state["ftz_bond"]
+
+noftz_consult  = st.session_state["noftz_consult"]
+noftz_mgmt     = st.session_state["noftz_mgmt"]
+noftz_software = st.session_state["noftz_software"]
+noftz_bond     = st.session_state["noftz_bond"]
 
 # =====================================================
 # CORE CALCULATIONS (UNCHANGED)
@@ -261,11 +324,13 @@ interest_rate = current_interest_rate / 100
 deferred_duty_amount = total_net_duty_with_ftz
 
 # Total Working Capital Savings (H25 equivalent)
-total_wc_saving = (
-    deferred_duty_amount
-    * interest_rate
-    * (avg_stock_holding_days / 365)
-)
+# total_wc_saving = (
+#     deferred_duty_amount
+#     * interest_rate
+#     * (avg_stock_holding_days / 365)
+# )
+
+total_wc_saving = ((total_duty+ mpf_with_ftz)* interest_rate* (avg_stock_holding_days / 365))
 # ---------------------------------------------------------
 # ADJUST COST WITH FTZ (DEDUCT WC SAVINGS)
 # ---------------------------------------------------------
@@ -283,7 +348,13 @@ net_savings_to_brand = total_cost_without_ftz - total_cost_with_ftz
 # =====================================================
 b1, b2, b3 = st.columns(3)
 calculate = b1.button("📊 Calculate Savings", use_container_width=True)
-details = b3.button("📄 Show Details", use_container_width=True)
+
+def _go_details():
+    st.session_state["nav_target"] = "details"   # remember intent across reruns
+
+b3.button("📄 Show Details", key="show_details_btn", use_container_width=True, on_click=_go_details)
+
+#details = b3.button("📄 Show Details", use_container_width=True)
 
 # =====================================================
 # KPI + LOGGING
@@ -369,13 +440,13 @@ if calculate:
 if "cta_open" not in st.session_state:
     st.session_state.cta_open = False
 
-if b2.button("📞 Smart CTA", use_container_width=True):
+if b2.button("📞 Book Free Consultation Here", use_container_width=True):
     st.session_state.cta_open = True
 
 if st.session_state.cta_open:
     st.markdown("---")
     st.markdown(
-        "<h4 style='color:#0f172a;'>📞 Smart CTA — Request a Consultation</h4>",
+        "<h4 style='color:#0f172a;'>📞 Request a Consultation</h4>",
         unsafe_allow_html=True
     )
     # with st.form("cta_form"):
@@ -415,9 +486,10 @@ if st.session_state.cta_open:
 # -----------------------------
 # DETAILS PAGE NAV
 # -----------------------------
-if details:
+# if details:
+#     st.switch_page("pages/1_Show_Details.py")
+if st.session_state.get("nav_target") == "details":
     st.switch_page("pages/1_Show_Details.py")
-
 # =====================================================
 # CHATBOT (UNMATCHED LOGGING)
 # =====================================================
