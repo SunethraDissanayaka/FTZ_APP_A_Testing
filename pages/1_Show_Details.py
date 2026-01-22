@@ -585,3 +585,23 @@ with st.expander("📈 ROI & Payback Period"):
 **Payback (Months)**  
 `Payback = FTZ Operating Costs ÷ Monthly Savings`
 """)
+
+st.markdown("---")
+# st.markdown("""
+# **Disclaimer:**  
+# This calculator provides directional estimates only and does not constitute financial,
+# legal, or compliance advice. If you need further details, book a free consultation
+# """)
+st.markdown(
+    """
+    <div style="margin-top:8px; color:#6b7280; font-size:14px;">
+      <span style="color:#9ca3af;">*</span>
+      <em>
+        **Disclaimer:** 
+        This calculator provides directional estimates only and does not constitute financial, legal, or compliance advice. If you need further details, book a free consultation
+      </em>
+    </div>
+    """,
+    unsafe_allow_html=True,
+)
+st.markdown("---")
