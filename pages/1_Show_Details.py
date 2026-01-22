@@ -45,17 +45,25 @@ defaults = {
     "export_pct": 1.0,
     "offspec_pct": 0.25,
     "broker_cost": 125.0,
-    "current_interest_rate": 6.5,
-    "avg_stock_holding_days": 45,
-    "ftz_consult": 50000,
-    "ftz_mgmt": 150000,
-    "ftz_software": 40000,
+    "current_interest_rate": 7,
+    "avg_stock_holding_days": 120,
+    "ftz_consult": 19000,
+    "ftz_mgmt": 100000,
+    "ftz_software": 10000,
     "ftz_bond": 1000,
     "noftz_consult": 0,
     "noftz_mgmt": 0,
     "noftz_software": 0,
     "noftz_bond": 0,
 }
+
+FTZ_CONSTS = {
+    "ftz_consult": 19000,
+    "ftz_mgmt": 100000,
+    "ftz_software": 10000,
+    "ftz_bond": 1000,
+}
+
 for k, v in defaults.items():
     st.session_state.setdefault(k, v)
 
@@ -68,6 +76,12 @@ if "show_insights" not in st.session_state:
 def mark_dirty():
     st.session_state["_dirty"] = True
 
+for k, v in FTZ_CONSTS.items():
+    st.session_state[k] = v
+
+# Remove No-FTZ operating costs from the model entirely
+for k in ["noftz_consult", "noftz_mgmt", "noftz_software", "noftz_bond"]:
+    st.session_state[k] = 0.0
 
 # ---------------------------------------------------------
 # MONEY FORMATTERS
@@ -94,36 +108,62 @@ left, right = st.columns([1.25, 1.55])
 with left:
     st.markdown("<h4 style='color:#0f172a;'>Customer Data Assumptions</h4>", unsafe_allow_html=True)
 
-    r1c1, r1c2, r1c3, r1c4, r1c5 = st.columns(5)
-    r2c1, r2c2, r2c3, r2c4, r2c5 = st.columns(5)
+    # r1c1, r1c2, r1c3, r1c4, r1c5 = st.columns(5)
+    # r2c1, r2c2, r2c3, r2c4, r2c5 = st.columns(5)
 
+    # r1c1.number_input("Shipments / Week", min_value=1, key="shipments_per_week", on_change=mark_dirty)
+    # r1c2.number_input("Avg Import Value ($)", min_value=1000, step=1000, key="avg_import_value", on_change=mark_dirty)
+    # r1c3.number_input("Export %", min_value=0, max_value=100, step=1, key="export_pct", on_change=mark_dirty)
+    # r1c4.number_input("Off-Spec %", min_value=0.0, max_value=100.0, step=0.01, key="offspec_pct", on_change=mark_dirty)
+    # r1c5.number_input("Avg Duty %", min_value=0.0, max_value=100.0, step=0.1, key="duty_pct", on_change=mark_dirty)
+
+
+    # r2c1.number_input("MPF %", key="mpf_pct", disabled=True)
+    # r2c2.number_input("HMF %", key="hmf_pct", disabled=True)
+    # r2c3.number_input("Broker Cost ($/entry)", key="broker_cost", on_change=mark_dirty)
+    # r2c4.number_input("Cost of Capital %", key="current_interest_rate", on_change=mark_dirty)
+    # r2c5.number_input("Avg Stock Holding Days", key="avg_stock_holding_days", help=(
+    #     "(360/Inv Turns) or Days of Supply 0r (Months of Supply * 30)"
+    # ), on_change=mark_dirty,step=1)
+    # Row 1 (3)
+    r1c1, r1c2, r1c3 = st.columns(3)
     r1c1.number_input("Shipments / Week", min_value=1, key="shipments_per_week", on_change=mark_dirty)
     r1c2.number_input("Avg Import Value ($)", min_value=1000, step=1000, key="avg_import_value", on_change=mark_dirty)
     r1c3.number_input("Export %", min_value=0, max_value=100, step=1, key="export_pct", on_change=mark_dirty)
-    r1c4.number_input("Off-Spec %", min_value=0.0, max_value=100.0, step=0.01, key="offspec_pct", on_change=mark_dirty)
-    r1c5.number_input("Avg Duty %", min_value=0.0, max_value=100.0, step=0.1, key="duty_pct", on_change=mark_dirty)
+
+    # Row 2 (4)
+    r2c1, r2c2, r2c3, r2c4 = st.columns(4)
+    r2c1.number_input("Off-Spec %", min_value=0.0, max_value=100.0, step=0.01, key="offspec_pct", on_change=mark_dirty)
+    r2c2.number_input("Avg Duty %", min_value=0.0, max_value=100.0, step=0.1, key="duty_pct", on_change=mark_dirty)
+    r2c3.number_input("MPF %", key="mpf_pct", disabled=True)
+    r2c4.number_input("HMF %", key="hmf_pct", disabled=True)
+
+    # Row 3 (3)
+    r3c1, r3c2, r3c3 = st.columns(3)
+    r3c1.number_input("Broker Cost ($/entry)", key="broker_cost", on_change=mark_dirty)
+    r3c2.number_input("Cost of Capital %", key="current_interest_rate", on_change=mark_dirty)
+    r3c3.number_input(
+        "Avg Stock Holding Days",
+        key="avg_stock_holding_days",
+        help="(360/Inv Turns) or Days of Supply or (Months of Supply * 30)",
+        on_change=mark_dirty,
+        step=1,
+    )
+
+    # st.markdown("<h4 style='color:#0f172a;'>Costs With FTZ</h4>", unsafe_allow_html=True)
+    # c1, c2, c3, c4 = st.columns(4)
+    # c1.number_input("FTZ Consulting ($)", key="ftz_consult", step=1,on_change=mark_dirty)
+    # c2.number_input("FTZ Management ($)", key="ftz_mgmt",step=1, on_change=mark_dirty)
+    # c3.number_input("FTZ Software Fee ($)", key="ftz_software", step=1,on_change=mark_dirty)
+    # c4.number_input("FTZ Operator Bond ($)", key="ftz_bond",step=1, on_change=mark_dirty)
 
 
-    r2c1.number_input("MPF %", key="mpf_pct", disabled=True)
-    r2c2.number_input("HMF %", key="hmf_pct", disabled=True)
-    r2c3.number_input("Broker Cost ($/entry)", key="broker_cost", on_change=mark_dirty)
-    r2c4.number_input("Cost of Capital", key="current_interest_rate", on_change=mark_dirty)
-    r2c5.number_input("Avg Stock Holding Days (Days of Supply)", key="avg_stock_holding_days", on_change=mark_dirty,step=1)
-
-    st.markdown("<h4 style='color:#0f172a;'>Costs With FTZ</h4>", unsafe_allow_html=True)
-    c1, c2, c3, c4 = st.columns(4)
-    c1.number_input("FTZ Consulting ($)", key="ftz_consult", step=1,on_change=mark_dirty)
-    c2.number_input("FTZ Management ($)", key="ftz_mgmt",step=1, on_change=mark_dirty)
-    c3.number_input("FTZ Software Fee ($)", key="ftz_software", step=1,on_change=mark_dirty)
-    c4.number_input("FTZ Operator Bond ($)", key="ftz_bond",step=1, on_change=mark_dirty)
-
-
-    st.markdown("<h4 style='color:#0f172a;'>Costs Without FTZ</h4>", unsafe_allow_html=True)
-    n1, n2, n3, n4 = st.columns(4)
-    n1.number_input("Consulting (No FTZ)", key="noftz_consult",step=1, on_change=mark_dirty)
-    n2.number_input("Management (No FTZ)", key="noftz_mgmt", step=1, on_change=mark_dirty)
-    n3.number_input("Software (No FTZ)", key="noftz_software", step=1,on_change=mark_dirty)
-    n4.number_input("Operator Bond (No FTZ)", key="noftz_bond",step=1, on_change=mark_dirty)
+    # st.markdown("<h4 style='color:#0f172a;'>Costs Without FTZ</h4>", unsafe_allow_html=True)
+    # n1, n2, n3, n4 = st.columns(4)
+    # n1.number_input("Consulting (No FTZ)", key="noftz_consult",step=1, on_change=mark_dirty)
+    # n2.number_input("Management (No FTZ)", key="noftz_mgmt", step=1, on_change=mark_dirty)
+    # n3.number_input("Software (No FTZ)", key="noftz_software", step=1,on_change=mark_dirty)
+    # n4.number_input("Operator Bond (No FTZ)", key="noftz_bond",step=1, on_change=mark_dirty)
 
 
     # Rerun if _dirty is set
@@ -156,6 +196,17 @@ noftz_bond     = st.session_state["noftz_bond"]
 # ---------------------------------------------------------
 # CALCULATIONS (same as main app)
 # ---------------------------------------------------------
+ftz_consult  = st.session_state["ftz_consult"]
+ftz_mgmt     = st.session_state["ftz_mgmt"]
+ftz_software = st.session_state["ftz_software"]
+ftz_bond     = st.session_state["ftz_bond"]
+
+# No-FTZ op costs removed
+noftz_consult  = 0.0
+noftz_mgmt     = 0.0
+noftz_software = 0.0
+noftz_bond     = 0.0
+
 export_sales = export_pct / 100
 off_spec     = offspec_pct / 100
 mpf_rate     = mpf_pct / 100
@@ -175,7 +226,7 @@ mpf_with_ftz   = min(shipments_per_week * avg_import_value * mpf_rate, 634.62) *
 broker_no_ftz  = entries_year * broker_cost + shipments_per_week * avg_import_value * hmf_rate
 broker_ftz     = 52 * broker_cost + shipments_per_week * avg_import_value * hmf_rate
 
-noftz_ops = noftz_consult + noftz_mgmt + noftz_software + noftz_bond
+noftz_ops = 0
 ftz_ops   = ftz_consult + ftz_mgmt + ftz_software + ftz_bond
 
 # Working capital
@@ -187,18 +238,20 @@ deferred_duty_amount     = total_net_duty_with_ftz
 total_wc_saving = ((total_duty+ mpf_with_ftz)* interest_rate* (avg_stock_holding_days / 365))
 
 total_no_ftz = total_duty + mpf_no_ftz + broker_no_ftz + noftz_ops
-total_ftz    = (total_duty - duty_saved_export - duty_saved_offspec) + mpf_with_ftz + broker_ftz + ftz_ops - total_wc_saving
+total_ftz    = (total_duty - duty_saved_export - duty_saved_offspec) + mpf_with_ftz + broker_ftz + ftz_ops
 net_savings  = total_no_ftz - total_ftz
 
 # ---------------------------------------------------------
 # KPIs
 # ---------------------------------------------------------
+st.markdown("---")
 st.markdown("<h4 style='color:#0f172a;'>Key Metrics</h4>", unsafe_allow_html=True)
-k1, k2, k3, k4 = st.columns(4)
+k1, k2, k3, k4,k5 = st.columns(5)
 k1.metric("Total Duty Baseline", money_fmt(total_duty))
 k2.metric("Cost Without FTZ",  money_fmt(total_no_ftz))
 k3.metric("Cost With FTZ",     money_fmt(total_ftz))
 k4.metric("Net Savings",       money_fmt(net_savings))
+k5.metric("Working Capital Savings",       money_fmt(total_wc_saving))
 
 # =========================================================
 # FTZ COST COMPARISON — FULL TABLE
@@ -243,7 +296,7 @@ with right:
     totals_with_ftz = net_duty_with_ftz + mpf_with_ftz + broker_hmf_with_ftz
 
     total_cost_no_ftz = totals_no_ftz + operating_no_ftz
-    total_cost_ftz    = totals_with_ftz + operating_ftz - total_wc_saving
+    total_cost_ftz    = totals_with_ftz + operating_ftz
 
     net_savings_tbl = total_cost_no_ftz - total_cost_ftz
 
@@ -256,18 +309,18 @@ with right:
             "Total MPF",
             "Total Broker Costs + HMF",
             "Totals",
-            "FTZ Consulting",
-            "FTZ Management",
-            "FTZ Software Fee",
-            "FTZ Operator Bond",
+            #"FTZ Consulting",
+            #"FTZ Management",
+            #"FTZ Software Fee",
+            #"FTZ Operator Bond",
             "Total Operating Costs",
-            "Total WC Saving",
+            "Total Working Capital Saving",
             "Net Savings to Brand",
         ],
         "Without FTZ ($)": [
             total_duty, 0, 0, total_net_duty_no_ftz,
             mpf_no_ftz, broker_hmf_no_ftz, totals_no_ftz,
-            noftz_consult, noftz_mgmt, noftz_software, noftz_bond,
+            #noftz_consult, noftz_mgmt, noftz_software, noftz_bond,
             operating_no_ftz,
             0,
             total_cost_no_ftz,
@@ -276,9 +329,10 @@ with right:
             total_duty, -duty_saved_export, -duty_saved_offspec,
             total_net_duty_with_ftz, mpf_with_ftz, broker_hmf_with_ftz,
             totals_with_ftz,
-            ftz_consult, ftz_mgmt, ftz_software, ftz_bond,
+            #ftz_consult, ftz_mgmt, ftz_software, ftz_bond,
             operating_ftz,
-            -total_wc_saving,
+            #total_wc_saving,
+            0,
             total_cost_ftz,
         ],
         "FTZ Savings ($)": [
@@ -289,10 +343,10 @@ with right:
             mpf_no_ftz - mpf_with_ftz,
             broker_hmf_no_ftz - broker_hmf_with_ftz,
             totals_no_ftz - totals_with_ftz,
-            noftz_consult - ftz_consult,
-            noftz_mgmt - ftz_mgmt,
-            noftz_software - ftz_software,
-            noftz_bond - ftz_bond,
+            #noftz_consult - ftz_consult,
+            #noftz_mgmt - ftz_mgmt,
+            #noftz_software - ftz_software,
+            #noftz_bond - ftz_bond,
             operating_no_ftz - operating_ftz,
             total_wc_saving,
             net_savings_tbl,
@@ -306,7 +360,7 @@ with right:
         .set_properties(**{"font-size": "12px", "padding": "4px"})
         .hide(axis="index")
     )
-    st.dataframe(styled_table, use_container_width=True, height=500)
+    st.dataframe(styled_table, use_container_width=True, height=400)
 
 # =========================================================
 # AI INSIGHTS ASSISTANT
