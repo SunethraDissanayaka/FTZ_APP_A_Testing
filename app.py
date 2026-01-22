@@ -190,11 +190,11 @@ defaults = {
     "export_pct": 1.0,
     "offspec_pct": 0.25,
     "broker_cost": 125.0,
-    "current_interest_rate": 6.5,
-    "avg_stock_holding_days": 45,
-    "ftz_consult": 50000,
-    "ftz_mgmt": 150000,
-    "ftz_software": 40000,
+    "current_interest_rate": 7,
+    "avg_stock_holding_days": 120,
+    "ftz_consult": 19000,
+    "ftz_mgmt": 100000,
+    "ftz_software": 10000,
     "ftz_bond": 1000,
     "noftz_consult": 0,
     "noftz_mgmt": 0,
@@ -202,8 +202,23 @@ defaults = {
     "noftz_bond": 0,
 }
 
+FTZ_CONSTS = {
+    "ftz_consult": 19000,
+    "ftz_mgmt": 100000,
+    "ftz_software": 10000,
+    "ftz_bond": 1000,
+}
+
 for key, value in defaults.items():
     st.session_state.setdefault(key, value)
+
+for k, v in FTZ_CONSTS.items():
+    st.session_state[k] = v  # keep in session for cross-page syncing
+
+# remove all No-FTZ operating costs from state & calculations
+for k in ["noftz_consult", "noftz_mgmt", "noftz_software", "noftz_bond"]:
+    st.session_state[k] = 0.0
+
 # =====================================================
 # INPUTS (UNCHANGED)
 # =====================================================
@@ -217,7 +232,7 @@ cols[2].number_input("MPF %", value=st.session_state["mpf_pct"], disabled=True, 
 
 st.session_state["broker_cost"] = cols[3].number_input("Broker Cost ($/entry)", value=st.session_state["broker_cost"])
 #st.session_state["current_interest_rate"] = cols[4].number_input("Current Interest Rate (%)", value=st.session_state["current_interest_rate"])
-st.session_state["current_interest_rate"] = cols[4].number_input("Cost of Capital", value=st.session_state["current_interest_rate"])
+st.session_state["current_interest_rate"] = cols[4].number_input("Cost of Capital %", value=st.session_state["current_interest_rate"])
 
 
 cols2 = st.columns(5)
@@ -225,21 +240,48 @@ st.session_state["export_pct"] = cols2[0].number_input("Export %", 0.0, 100.0, s
 st.session_state["offspec_pct"] = cols2[1].number_input("Off-Spec %", 0.0, 100.0, step=0.01, value=st.session_state["offspec_pct"])
 cols2[2].number_input("HMF %", value=st.session_state["hmf_pct"], disabled=True)
 st.session_state["duty_pct"] = cols2[3].number_input("Avg Duty %", 0.0, 100.0, step=0.1, value=st.session_state["duty_pct"])
-st.session_state["avg_stock_holding_days"] = cols2[4].number_input("Avg Stock Holding Days (Days of Supply)", value=st.session_state["avg_stock_holding_days"])
+st.session_state["avg_stock_holding_days"] = cols2[4].number_input("Avg Stock Holding Days", help=(
+        "(360/Inv Turns) or Days of Supply 0r (Months of Supply * 30)"
+    ), value=st.session_state["avg_stock_holding_days"])
+# 
+# --- Disclaimer (small, italic, grey) ---
+st.markdown(
+    """
+    <div style="margin-top:8px; color:#6b7280; font-size:12px;">
+      <span style="color:#9ca3af;">*</span>
+      <em>
+        This calculator provides directional estimates only and does not constitute financial,
+        legal, or compliance advice. For further details please book a free consultation.
+      </em>
+    </div>
+    """,
+    unsafe_allow_html=True,
+)
+st.markdown("---")
+# st.markdown("**Costs With FTZ (Annual)**")
+# c1, c2, c3, c4 = st.columns(4)
+# st.session_state["ftz_consult"] = c1.number_input("FTZ Consulting ($)", value=st.session_state["ftz_consult"])
+# st.session_state["ftz_mgmt"] = c2.number_input("FTZ Management ($)", value=st.session_state["ftz_mgmt"])
+# st.session_state["ftz_software"] = c3.number_input("FTZ Software Fee ($)", value=st.session_state["ftz_software"])
+# st.session_state["ftz_bond"] = c4.number_input("FTZ Operator Bond ($)", value=st.session_state["ftz_bond"])
 
-st.markdown("**Costs With FTZ (Annual)**")
-c1, c2, c3, c4 = st.columns(4)
-st.session_state["ftz_consult"] = c1.number_input("FTZ Consulting ($)", value=st.session_state["ftz_consult"])
-st.session_state["ftz_mgmt"] = c2.number_input("FTZ Management ($)", value=st.session_state["ftz_mgmt"])
-st.session_state["ftz_software"] = c3.number_input("FTZ Software Fee ($)", value=st.session_state["ftz_software"])
-st.session_state["ftz_bond"] = c4.number_input("FTZ Operator Bond ($)", value=st.session_state["ftz_bond"])
+# st.markdown("**Costs With FTZ (Annual)**")
+# c1, c2, c3, c4 = st.columns(4)
+# with c1:
+#     st.metric("FTZ Consulting ($)", f"{int(st.session_state['ftz_consult']):,}")
+# with c2:
+#     st.metric("FTZ Management ($)", f"{int(st.session_state['ftz_mgmt']):,}")
+# with c3:
+#     st.metric("FTZ Software Fee ($)", f"{int(st.session_state['ftz_software']):,}")
+# with c4:
+#     st.metric("FTZ Operator Bond ($)", f"{int(st.session_state['ftz_bond']):,}")
 
-st.markdown("**Costs Without FTZ (Annual)**")
-n1, n2, n3, n4 = st.columns(4)
-st.session_state["noftz_consult"] = n1.number_input("Consulting (No FTZ)", value=st.session_state["noftz_consult"])
-st.session_state["noftz_mgmt"] = n2.number_input("Management (No FTZ)", value=st.session_state["noftz_mgmt"])
-st.session_state["noftz_software"] = n3.number_input("Software (No FTZ)", value=st.session_state["noftz_software"])
-st.session_state["noftz_bond"] = n4.number_input("Operator Bond (No FTZ)", value=st.session_state["noftz_bond"])
+# st.markdown("**Costs Without FTZ (Annual)**")
+# n1, n2, n3, n4 = st.columns(4)
+# st.session_state["noftz_consult"] = n1.number_input("Consulting (No FTZ)", value=st.session_state["noftz_consult"])
+# st.session_state["noftz_mgmt"] = n2.number_input("Management (No FTZ)", value=st.session_state["noftz_mgmt"])
+# st.session_state["noftz_software"] = n3.number_input("Software (No FTZ)", value=st.session_state["noftz_software"])
+# st.session_state["noftz_bond"] = n4.number_input("Operator Bond (No FTZ)", value=st.session_state["noftz_bond"])
 
 # =====================================================
 # BIND LOCALS FOR CALCULATIONS (this is what was missing)
@@ -274,6 +316,17 @@ off_spec = offspec_pct / 100
 mpf_rate = mpf_pct / 100
 hmf_rate = hmf_pct / 100
 avg_duty = duty_pct / 100
+
+ftz_consult  = st.session_state["ftz_consult"]
+ftz_mgmt     = st.session_state["ftz_mgmt"]
+ftz_software = st.session_state["ftz_software"]
+ftz_bond     = st.session_state["ftz_bond"]
+
+# removed from model
+noftz_consult  = 0.0
+noftz_mgmt     = 0.0
+noftz_software = 0.0
+noftz_bond     = 0.0
 
 # --- Annual import value ---
 total_import_value = shipments_per_week * avg_import_value * 52
@@ -335,7 +388,7 @@ total_wc_saving = ((total_duty+ mpf_with_ftz)* interest_rate* (avg_stock_holding
 # ADJUST COST WITH FTZ (DEDUCT WC SAVINGS)
 # ---------------------------------------------------------
 total_cost_with_ftz = (
-    total_net_duty_with_ftz + mpf_with_ftz + broker_hmf_with_ftz + cost_with_ftz-total_wc_saving
+    total_net_duty_with_ftz + mpf_with_ftz + broker_hmf_with_ftz + cost_with_ftz
 )
 #total_cost_with_ftz_adj = total_cost_with_ftz - total_wc_saving
 
@@ -369,7 +422,7 @@ if calculate:
         "cta_clicked": "No",
     })
 
-    k1, k2, k3, k4 = st.columns(4)
+    k1, k2, k3, k4, k5 = st.columns(5)
 
     # k1.metric("Total Duty Baseline", money(total_duty))
     # k2.metric("Cost With FTZ", money(total_cost_with_ftz))
@@ -385,7 +438,7 @@ if calculate:
             return f"(${abs(x):,.0f})"
         return f"${x:,.0f}"
     if calculate:
-        k1, k2, k3, k4 = st.columns(4)
+        k1, k2, k3, k4,k5 = st.columns(5)
 
         # -------- KPI 1 — Total Duty Baseline --------
         with k1:
@@ -433,6 +486,18 @@ if calculate:
             </div>
             """, unsafe_allow_html=True)
 
+        with k5:
+            savings_color = "#22c55e" if total_wc_saving >= 0 else "#ef4444"
+
+            st.markdown(f"""
+            <div class='kpi-card'>
+                <div class='kpi-label'>📉 Working Capital Saving</div>
+                <div class='kpi-value' style='color:{savings_color};'>
+                    {money_fmt_val(total_wc_saving)}
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
+
 
 # =====================================================
 # SMART CTA (LOGGED)
@@ -440,7 +505,7 @@ if calculate:
 if "cta_open" not in st.session_state:
     st.session_state.cta_open = False
 
-if b2.button("📞 Book Free Consultation Here", use_container_width=True):
+if b2.button("📅 Book Free Consultation Here", use_container_width=True):
     st.session_state.cta_open = True
 
 if st.session_state.cta_open:
@@ -449,13 +514,7 @@ if st.session_state.cta_open:
         "<h4 style='color:#0f172a;'>📞 Request a Consultation</h4>",
         unsafe_allow_html=True
     )
-    # with st.form("cta_form"):
-    #     name = st.text_input("Full Name *")
-    #     company = st.text_input("Company *")
-    #     email = st.text_input("Email *")
-    #     phone = st.text_input("Phone")
-    #     message = st.text_area("Message")
-    #     submit = st.form_submit_button("Request a Call")
+    
     with st.form("smart_cta_form"):
         c1, c2 = st.columns(2)
         with c1:
@@ -482,6 +541,34 @@ if st.session_state.cta_open:
         })
         st.success("✅ Thank you! Your request has been received.\n\n"
                 "Our FTZ advisory team will contact you shortly..")
+        
+    # --- SECOND SEGMENT: Book a Consultation (with person icon) ---
+    st.markdown(
+        "<h4 style='color:#0f172a; margin-top:14px;'>👤 Book a Consultation</h4>",
+        unsafe_allow_html=True
+    )
+
+    # Set your booking link here
+    BOOKING_URL = "https://outlook.office.com/bookwithme/user/c143102e201742738e4a73274b7ead96@masholdings.com/meetingtype/8nt2nJ0om0uxZ9yc187X_w2?anonymous&ismsaljsauthenabled&ep=mCardFromTile"
+
+    # Prefer st.link_button if available (Streamlit ≥ 1.29).
+    # If your version doesn't support it, uncomment the fallback below.
+    try:
+        st.link_button("Book Consultation", BOOKING_URL, use_container_width=False)
+    except Exception:
+        # Fallback: styled Markdown link to look like a button
+        st.markdown(
+            f"""
+            <a href="{BOOKING_URL}" target="_blank"
+            style="
+                display:inline-block;
+                background:#0f172a; color:#fff; text-decoration:none;
+                padding:8px 14px; border-radius:8px; font-weight:600;">
+            Book Consultation
+            </a>
+            """,
+            unsafe_allow_html=True
+        )
         
 # -----------------------------
 # DETAILS PAGE NAV
@@ -582,6 +669,42 @@ faq_qa = {
     "Export PDF/Excel directly and use the consult CTA "
     "to turn estimates into execution."
 }
+
+# ✅ Add starter FTZ FAQs without changing existing ones
+faq_qa.update({
+    "what is an ftz foreign trade zone":
+        "A Foreign-Trade Zone (FTZ) is a secured area under U.S. Customs supervision where imported goods "
+        "can be stored, processed, or re-exported with deferral, reduction, or elimination of customs duties.",
+
+    "who qualifies for an ftz apparel brand":
+        "Importers who regularly bring merchandise into the U.S. and manage inventory benefit most—especially "
+        "apparel brands with multi-channel flows (DTC, wholesale, marketplaces) and material export or off-spec volumes.",
+
+    "how long does ftz activation take timeline":
+        "Most brands can activate and go live in roughly 60–90 days with focused execution—covering application, "
+        "procedures, systems integration, and operator approval.",
+
+    "what documents required for ftz operations":
+        "Typical items include inventory control procedures, zone admission documentation, weekly entry processes, "
+        "audit trails, and standard operating procedures aligned to apparel workflows.",
+
+    "how does weekly entry work benefits":
+        "Weekly entry consolidates multiple shipments into one customs entry per week—significantly reducing MPF exposure "
+        "and admin friction while maintaining compliance.",
+
+    "difference ftz vs bonded warehouse":
+        "A bonded warehouse defers duty until withdrawal but lacks FTZ’s weekly entry and manufacturing/processing flexibility. "
+        "FTZs also support re-exports without duty and better align to omnichannel inventory strategies.",
+
+    "can we export from ftz without paying duty":
+        "Yes. Goods exported directly from the FTZ typically avoid U.S. duty; duty applies only when goods enter "
+        "U.S. commerce. Off-spec/returns relief may also apply per regulations.",
+
+    "how big are savings mpf hmf duty examples":
+        "Savings come from three levers: export/off-spec duty relief, MPF reduction via weekly entry, and optimized broker/HMF handling. "
+        "Exact impact depends on your shipments/week, average import value, duty rate, and export/off-spec mix."
+})
+
 faq_keys = list(faq_qa.keys())
 
 import difflib
@@ -595,6 +718,39 @@ if "chat_history" not in st.session_state:
 
 q = st.text_input("Ask a question about FTZ:")
 
+# --- Starter questions (chips) shown under the input field ---
+st.markdown("<div style='color:#475569; font-size:13px; margin:6px 0 4px 0;'>Try one of these:</div>", unsafe_allow_html=True)
+
+
+starter_map = [
+    ("What is an foreign trade zone?", "what is an ftz foreign trade zone"),
+    ("Who qualifies for an FTZ (apparel)?", "who qualifies for an ftz apparel brand"),
+    ("How does weekly entry reduce MPF?", "how does weekly entry work benefits"),
+    #("FTZ vs bonded warehouse — what's different?", "difference ftz vs bonded warehouse"),
+    ("Can we export from an FTZ without duty?", "can we export from ftz without paying duty"),
+    ("How big can the savings be?", "how big are savings mpf hmf duty examples"),
+]
+
+# Render as small buttons (chips) in a few columns
+cols = st.columns(6)
+for i, (label, keyname) in enumerate(starter_map):
+    with cols[i % 6]:
+        if st.button(label, key=f"starter_{i}"):
+            ans = faq_qa.get(keyname) or match_question(label)
+            if not ans:
+                # keep your existing logging behavior when nothing matches
+                log_to_google_sheets({
+                    "session_id": st.session_state.session_id,
+                    "net_savings": net_savings_to_brand,
+                    "cost_with_ftz": total_cost_with_ftz,
+                    "cost_without_ftz": total_cost_without_ftz,
+                    "chat_question": label,
+                })
+                ans = "Thank you for your question, Your question will be directed to the Customer Success Lead at MAS US Holdings at oscarc@masholdings.com."
+            st.session_state.chat_history.append(("You", label))
+            st.session_state.chat_history.append(("AI", ans))
+
+
 if st.button("Ask AI"):
     ans = match_question(q)
     if not ans:
@@ -607,12 +763,10 @@ if st.button("Ask AI"):
         })
         ans = "Thank you for your question, Your question will be directed to the Customer Success Lead at MAS US Holdings at oscarc@masholdings.com."
             
-
     st.session_state.chat_history.append(("You", q))
     st.session_state.chat_history.append(("AI", ans))
 
 for s, m in st.session_state.chat_history:
-    #st.markdown(f"**{s}:** {m}")
     if s == "You":
         st.markdown(
             f"<div class='chat-user'><strong>You:</strong> {m}</div>",
@@ -626,8 +780,8 @@ for s, m in st.session_state.chat_history:
 
 
 st.markdown("---")
-st.markdown("""
-**Disclaimer:**  
-This calculator provides directional estimates only and does not constitute financial,
-legal, or compliance advice.
-""")
+# st.markdown("""
+# **Disclaimer:**  
+# This calculator provides directional estimates only and does not constitute financial,
+# legal, or compliance advice.
+# """)
