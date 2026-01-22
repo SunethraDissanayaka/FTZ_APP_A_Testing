@@ -700,37 +700,37 @@ faq_qa = {
     "Export PDF/Excel directly and use the consult CTA "
     "to turn estimates into execution.",
 
-    "what is an ftz foreign trade zone":
-        "A Foreign-Trade Zone (FTZ) is a secured area under U.S. Customs supervision where imported goods "
-        "can be stored, processed, or re-exported with deferral, reduction, or elimination of customs duties.",
+    "what is a ftz foreign trade zone":
+    "A Foreign-Trade Zone (FTZ) is a secured area under U.S. Customs supervision where imported goods "
+    "can be stored, processed, or re-exported with deferral, reduction, or elimination of customs duties.",
 
     "who qualifies for an ftz apparel brand":
-        "Importers who regularly bring merchandise into the U.S. and manage inventory benefit most—especially "
-        "apparel brands with multi-channel flows (DTC, wholesale, marketplaces) and material export or off-spec volumes.",
+    "Importers who regularly bring merchandise into the U.S. and manage inventory benefit most—especially "
+    "apparel brands with multi-channel flows (DTC, wholesale, marketplaces) and material export or off-spec volumes.",
 
     "how long does ftz activation take timeline":
-        "Most brands can activate and go live in roughly 60–90 days with focused execution—covering application, "
-        "procedures, systems integration, and operator approval.",
+    "Most brands can activate and go live in roughly 60–90 days with focused execution—covering application, "
+    "procedures, systems integration, and operator approval.",
 
     "what documents required for ftz operations":
-        "Typical items include inventory control procedures, zone admission documentation, weekly entry processes, "
-        "audit trails, and standard operating procedures aligned to apparel workflows.",
+    "Typical items include inventory control procedures, zone admission documentation, weekly entry processes, "
+    "audit trails, and standard operating procedures aligned to apparel workflows.",
 
     "how does weekly entry work benefits":
-        "Weekly entry consolidates multiple shipments into one customs entry per week—significantly reducing MPF exposure "
-        "and admin friction while maintaining compliance.",
+    "Weekly entry consolidates multiple shipments into one customs entry per week—significantly reducing MPF exposure "
+    "and admin friction while maintaining compliance.",
 
     "difference ftz vs bonded warehouse":
-        "A bonded warehouse defers duty until withdrawal but lacks FTZ’s weekly entry and manufacturing/processing flexibility. "
-        "FTZs also support re-exports without duty and better align to omnichannel inventory strategies.",
+    "A bonded warehouse defers duty until withdrawal but lacks FTZ’s weekly entry and manufacturing/processing flexibility. "
+    "FTZs also support re-exports without duty and better align to omnichannel inventory strategies.",
 
     "can we export from ftz without paying duty":
-        "Yes. Goods exported directly from the FTZ typically avoid U.S. duty; duty applies only when goods enter "
-        "U.S. commerce. Off-spec/returns relief may also apply per regulations.",
+    "Yes. Goods exported directly from the FTZ typically avoid U.S. duty; duty applies only when goods enter "
+    "U.S. commerce. Off-spec/returns relief may also apply per regulations.",
 
     "how big are savings mpf hmf duty examples":
-        "Savings come from three levers: export/off-spec duty relief, MPF reduction via weekly entry, and optimized broker/HMF handling. "
-        "Exact impact depends on your shipments/week, average import value, duty rate, and export/off-spec mix."
+    "Savings come from three levers: export/off-spec duty relief, MPF reduction via weekly entry, and optimized broker/HMF handling. "
+    "Exact impact depends on your shipments/week, average import value, duty rate, and export/off-spec mix."
 
 }
 
@@ -782,6 +782,24 @@ if "chat_history" not in st.session_state:
 
 q = st.text_input("Ask a question about FTZ:")
 
+
+
+
+if st.button("Ask AI"):
+    ans = match_question(q)
+    if not ans:
+        log_to_google_sheets({
+            "session_id": st.session_state.session_id,
+            "net_savings": net_savings_to_brand,
+            "cost_with_ftz": total_cost_with_ftz,
+            "cost_without_ftz": total_cost_without_ftz,
+            "chat_question": q,
+        })
+        ans = "Thank you for your question, Your question will be directed to the Customer Success Lead at MAS US Holdings at oscarc@masholdings.com."
+            
+    st.session_state.chat_history.append(("You", q))
+    st.session_state.chat_history.append(("AI", ans))
+
 # --- Starter questions (chips) shown under the input field ---
 st.markdown("<div style='color:#475569; font-size:13px; margin:6px 0 4px 0;'>Try one of these:</div>", unsafe_allow_html=True)
 
@@ -817,21 +835,6 @@ for i, (label, keyname) in enumerate(starter_map):
             st.session_state.chat_history.append(("You", label))
             st.session_state.chat_history.append(("AI", ans))
 
-
-if st.button("Ask AI"):
-    ans = match_question(q)
-    if not ans:
-        log_to_google_sheets({
-            "session_id": st.session_state.session_id,
-            "net_savings": net_savings_to_brand,
-            "cost_with_ftz": total_cost_with_ftz,
-            "cost_without_ftz": total_cost_without_ftz,
-            "chat_question": q,
-        })
-        ans = "Thank you for your question, Your question will be directed to the Customer Success Lead at MAS US Holdings at oscarc@masholdings.com."
-            
-    st.session_state.chat_history.append(("You", q))
-    st.session_state.chat_history.append(("AI", ans))
 
 for s, m in st.session_state.chat_history:
     if s == "You":
