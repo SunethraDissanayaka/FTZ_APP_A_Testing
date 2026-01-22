@@ -28,11 +28,14 @@ LOG_COLUMNS = [
     "net_savings",
     "cost_with_ftz",
     "cost_without_ftz",
+    "wc_saving",
     "cta_clicked",
     "cta_name",
     "cta_company",
     "cta_email",
     "cta_phone",
+    "cta_preferred_date",
+    "cta_preferred_time",
     "cta_message",
     "chat_question",
 ]
@@ -125,6 +128,14 @@ h1,h2,h3 { color:#0f172a; }
     padding:14px;
     text-align:center;
 }
+            
+.kpi-card_new {
+    background:#052c87;
+    color:white;
+    border-radius:10px;
+    padding:14px;
+    text-align:center;
+}
 .kpi-value {
     font-size:20px;
     font-weight:700;
@@ -157,10 +168,8 @@ h1,h2,h3 { color:#0f172a; }
 st.markdown(
     """
     <h3 style="text-align:center;">
-        FTZ Savings – Agentic AI Calculator –
-        <span style="color:#2563eb; font-weight:700;">
-          A Testing
-        </span>
+        Foreign Trade Zone (FTZ) Saving Agentic AI Simulator
+        
     </h3>
     """,
 unsafe_allow_html=True
@@ -222,13 +231,16 @@ for k in ["noftz_consult", "noftz_mgmt", "noftz_software", "noftz_bond"]:
 # =====================================================
 # INPUTS (UNCHANGED)
 # =====================================================
-st.subheader("Customer Data Assumptions")
+st.subheader("Customer Data Inputs",help=("Please Enter Your Inputs"
+        
+    ),)
 
 cols = st.columns(5)
 st.session_state["shipments_per_week"] = cols[0].number_input("Shipments / Week", 1, value=st.session_state["shipments_per_week"])
 st.session_state["avg_import_value"] = cols[1].number_input("Avg Import Value ($)", 1000, step=1000, value=st.session_state["avg_import_value"])
 #st.number_input("MPF %", value=st.session_state["mpf_pct"], disabled=True)
-cols[2].number_input("MPF %", value=st.session_state["mpf_pct"], disabled=True, key="mpf_pct")
+cols[2].number_input("MPF %", value=st.session_state["mpf_pct"], disabled=True, key="mpf_pct", help=("Merchandize Processing Fee"  
+    ))
 
 st.session_state["broker_cost"] = cols[3].number_input("Broker Cost ($/entry)", value=st.session_state["broker_cost"])
 #st.session_state["current_interest_rate"] = cols[4].number_input("Current Interest Rate (%)", value=st.session_state["current_interest_rate"])
@@ -237,8 +249,8 @@ st.session_state["current_interest_rate"] = cols[4].number_input("Cost of Capita
 
 cols2 = st.columns(5)
 st.session_state["export_pct"] = cols2[0].number_input("Export %", 0.0, 100.0, step=1.0, value=st.session_state["export_pct"])
-st.session_state["offspec_pct"] = cols2[1].number_input("Off-Spec %", 0.0, 100.0, step=0.01, value=st.session_state["offspec_pct"])
-cols2[2].number_input("HMF %", value=st.session_state["hmf_pct"], disabled=True)
+st.session_state["offspec_pct"] = cols2[1].number_input("Off-Spec %", 0.0, 100.0, step=0.01, help=("Off-Specification Merchandize" ), value=st.session_state["offspec_pct"])
+cols2[2].number_input("HMF %", value=st.session_state["hmf_pct"], disabled=True,key="hmf_pct", help=("Harbor Maintenance Fee" ))
 st.session_state["duty_pct"] = cols2[3].number_input("Avg Duty %", 0.0, 100.0, step=0.1, value=st.session_state["duty_pct"])
 st.session_state["avg_stock_holding_days"] = cols2[4].number_input("Avg Stock Holding Days", help=(
         "(360/Inv Turns) or Days of Supply 0r (Months of Supply * 30)"
@@ -250,8 +262,7 @@ st.markdown(
     <div style="margin-top:8px; color:#6b7280; font-size:12px;">
       <span style="color:#9ca3af;">*</span>
       <em>
-        This calculator provides directional estimates only and does not constitute financial,
-        legal, or compliance advice. For further details please book a free consultation.
+        MAS USA Holdings' provides a wide array of FTZ Services for you to take advantage of and those savings are presented as "Net Savings using FTZ" and  potential "Woking Capital Savings" separately
       </em>
     </div>
     """,
@@ -419,6 +430,7 @@ if calculate:
         "net_savings": net_savings_to_brand,
         "cost_with_ftz": total_cost_with_ftz,
         "cost_without_ftz": total_cost_without_ftz,
+        "wc_saving": total_wc_saving,
         "cta_clicked": "No",
     })
 
@@ -490,7 +502,7 @@ if calculate:
             savings_color = "#22c55e" if total_wc_saving >= 0 else "#ef4444"
 
             st.markdown(f"""
-            <div class='kpi-card'>
+            <div class='kpi-card_new'>
                 <div class='kpi-label'>📉 Working Capital Saving</div>
                 <div class='kpi-value' style='color:{savings_color};'>
                     {money_fmt_val(total_wc_saving)}
@@ -511,7 +523,7 @@ if b2.button("📅 Book Free Consultation Here", use_container_width=True):
 if st.session_state.cta_open:
     st.markdown("---")
     st.markdown(
-        "<h4 style='color:#0f172a;'>📞 Request a Consultation</h4>",
+        "<h4 style='color:#0f172a;'>📅 Schedule a Meeting with MAS USA FTZ Consultation Team</h4>",
         unsafe_allow_html=True
     )
     
@@ -520,55 +532,74 @@ if st.session_state.cta_open:
         with c1:
             name = st.text_input("Full Name *")
             company = st.text_input("Company *")
+            preferred_date = st.date_input("Preferred Date")
         with c2:
             email = st.text_input("Business Email *")
             phone = st.text_input("Phone Number *")
+            preferred_time = st.time_input("Preferred Time")
+
+        # st.markdown("<div style='height:6px'></div>", unsafe_allow_html=True)
+        # dtc1, dtc2 = st.columns(2)
+        # with dtc1:
+        #     preferred_date = st.date_input("Preferred Date")
+        #     preferred_time = st.time_input("Preferred Time")
+            # if hasattr(st, "datetime_input"):
+            #     preferred_dt = st.datetime_input("Preferred Date & Time")
+            #     preferred_date, preferred_time = (preferred_dt.date(), preferred_dt.time()) if preferred_dt else (None, None)
+            # else:
+            #     preferred_date = st.date_input("Preferred Date")
+            #     preferred_time = st.time_input("Preferred Time")
+            #     preferred_dt = datetime.combine(preferred_date, preferred_time)
+
         message = st.text_area("Question", placeholder="Anything specific you'd like us to review before the call?")
 
-        submit = st.form_submit_button("Request a Call")
+        submit = st.form_submit_button("Schedule a Meeting")
     if submit:
         log_to_google_sheets({
             "session_id": st.session_state.session_id,
             "net_savings": net_savings_to_brand,
             "cost_with_ftz": total_cost_with_ftz,
             "cost_without_ftz": total_cost_without_ftz,
+            "wc_saving": total_wc_saving,
             "cta_clicked": "Yes",
             "cta_name": name,
             "cta_company": company,
             "cta_email": email,
             "cta_phone": phone,
+            "cta_preferred_date": preferred_date.isoformat() if preferred_date else "",
+            "cta_preferred_time": preferred_time.strftime("%H:%M") if preferred_time else "",
             "cta_message": message,
         })
         st.success("✅ Thank you! Your request has been received.\n\n"
-                "Our FTZ advisory team will contact you shortly..")
+                "MAS FTZ Consultation team will contact you shortly.")
         
-    # --- SECOND SEGMENT: Book a Consultation (with person icon) ---
-    st.markdown(
-        "<h4 style='color:#0f172a; margin-top:14px;'>👤 Book a Consultation</h4>",
-        unsafe_allow_html=True
-    )
+    # # --- SECOND SEGMENT: Book a Consultation (with person icon) ---
+    # st.markdown(
+    #     "<h4 style='color:#0f172a; margin-top:14px;'>👤 Book a Consultation</h4>",
+    #     unsafe_allow_html=True
+    # )
 
-    # Set your booking link here
-    BOOKING_URL = "https://outlook.office.com/bookwithme/user/c143102e201742738e4a73274b7ead96@masholdings.com/meetingtype/8nt2nJ0om0uxZ9yc187X_w2?anonymous&ismsaljsauthenabled&ep=mCardFromTile"
+    # # Set your booking link here
+    # BOOKING_URL = "https://outlook.office.com/bookwithme/user/c143102e201742738e4a73274b7ead96@masholdings.com/meetingtype/8nt2nJ0om0uxZ9yc187X_w2?anonymous&ismsaljsauthenabled&ep=mCardFromTile"
 
-    # Prefer st.link_button if available (Streamlit ≥ 1.29).
-    # If your version doesn't support it, uncomment the fallback below.
-    try:
-        st.link_button("Book Consultation", BOOKING_URL, use_container_width=False)
-    except Exception:
-        # Fallback: styled Markdown link to look like a button
-        st.markdown(
-            f"""
-            <a href="{BOOKING_URL}" target="_blank"
-            style="
-                display:inline-block;
-                background:#0f172a; color:#fff; text-decoration:none;
-                padding:8px 14px; border-radius:8px; font-weight:600;">
-            Book Consultation
-            </a>
-            """,
-            unsafe_allow_html=True
-        )
+    # # Prefer st.link_button if available (Streamlit ≥ 1.29).
+    # # If your version doesn't support it, uncomment the fallback below.
+    # try:
+    #     st.link_button("Book Consultation", BOOKING_URL, use_container_width=False)
+    # except Exception:
+    #     # Fallback: styled Markdown link to look like a button
+    #     st.markdown(
+    #         f"""
+    #         <a href="{BOOKING_URL}" target="_blank"
+    #         style="
+    #             display:inline-block;
+    #             background:#0f172a; color:#fff; text-decoration:none;
+    #             padding:8px 14px; border-radius:8px; font-weight:600;">
+    #         Book Consultation
+    #         </a>
+    #         """,
+    #         unsafe_allow_html=True
+    #     )
         
 # -----------------------------
 # DETAILS PAGE NAV
@@ -667,7 +698,40 @@ faq_qa = {
 
     "export share results pdf excel consult": 
     "Export PDF/Excel directly and use the consult CTA "
-    "to turn estimates into execution."
+    "to turn estimates into execution.",
+
+    "what is an ftz foreign trade zone":
+        "A Foreign-Trade Zone (FTZ) is a secured area under U.S. Customs supervision where imported goods "
+        "can be stored, processed, or re-exported with deferral, reduction, or elimination of customs duties.",
+
+    "who qualifies for an ftz apparel brand":
+        "Importers who regularly bring merchandise into the U.S. and manage inventory benefit most—especially "
+        "apparel brands with multi-channel flows (DTC, wholesale, marketplaces) and material export or off-spec volumes.",
+
+    "how long does ftz activation take timeline":
+        "Most brands can activate and go live in roughly 60–90 days with focused execution—covering application, "
+        "procedures, systems integration, and operator approval.",
+
+    "what documents required for ftz operations":
+        "Typical items include inventory control procedures, zone admission documentation, weekly entry processes, "
+        "audit trails, and standard operating procedures aligned to apparel workflows.",
+
+    "how does weekly entry work benefits":
+        "Weekly entry consolidates multiple shipments into one customs entry per week—significantly reducing MPF exposure "
+        "and admin friction while maintaining compliance.",
+
+    "difference ftz vs bonded warehouse":
+        "A bonded warehouse defers duty until withdrawal but lacks FTZ’s weekly entry and manufacturing/processing flexibility. "
+        "FTZs also support re-exports without duty and better align to omnichannel inventory strategies.",
+
+    "can we export from ftz without paying duty":
+        "Yes. Goods exported directly from the FTZ typically avoid U.S. duty; duty applies only when goods enter "
+        "U.S. commerce. Off-spec/returns relief may also apply per regulations.",
+
+    "how big are savings mpf hmf duty examples":
+        "Savings come from three levers: export/off-spec duty relief, MPF reduction via weekly entry, and optimized broker/HMF handling. "
+        "Exact impact depends on your shipments/week, average import value, duty rate, and export/off-spec mix."
+
 }
 
 # ✅ Add starter FTZ FAQs without changing existing ones
@@ -723,18 +787,21 @@ st.markdown("<div style='color:#475569; font-size:13px; margin:6px 0 4px 0;'>Try
 
 
 starter_map = [
-    ("What is an foreign trade zone?", "what is an ftz foreign trade zone"),
+    ("What is Foreign Trade Zone?", "what is an ftz foreign trade zone"),
     ("Who qualifies for an FTZ (apparel)?", "who qualifies for an ftz apparel brand"),
     ("How does weekly entry reduce MPF?", "how does weekly entry work benefits"),
+    ("Do savings hit cash flow immediately?", "direct cash flow savings immediate not deferral"),
+    ("How are these numbers calculated?", "how are numbers calculated"),
+
     #("FTZ vs bonded warehouse — what's different?", "difference ftz vs bonded warehouse"),
     ("Can we export from an FTZ without duty?", "can we export from ftz without paying duty"),
     ("How big can the savings be?", "how big are savings mpf hmf duty examples"),
 ]
 
 # Render as small buttons (chips) in a few columns
-cols = st.columns(6)
+cols = st.columns(7)
 for i, (label, keyname) in enumerate(starter_map):
-    with cols[i % 6]:
+    with cols[i % 7]:
         if st.button(label, key=f"starter_{i}"):
             ans = faq_qa.get(keyname) or match_question(label)
             if not ans:
@@ -783,5 +850,18 @@ st.markdown("---")
 # st.markdown("""
 # **Disclaimer:**  
 # This calculator provides directional estimates only and does not constitute financial,
-# legal, or compliance advice.
+# legal, or compliance advice. If you need further details, book a free consultation
 # """)
+st.markdown(
+    """
+    <div style="margin-top:8px; color:#6b7280; font-size:14px;">
+      <span style="color:#9ca3af;">*</span>
+      <em>
+        **Disclaimer:** 
+        This calculator provides directional estimates only and does not constitute financial, legal, or compliance advice. If you need further details, book a free consultation
+      </em>
+    </div>
+    """,
+    unsafe_allow_html=True,
+)
+st.markdown("---")
