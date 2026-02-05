@@ -554,24 +554,41 @@ if st.session_state.cta_open:
         message = st.text_area("Question", placeholder="Anything specific you'd like us to review before the call?")
 
         submit = st.form_submit_button("Schedule a Meeting")
+
+    # ✅ Mandatory validation (outside the form)
     if submit:
-        log_to_google_sheets({
-            "session_id": st.session_state.session_id,
-            "net_savings": net_savings_to_brand,
-            "cost_with_ftz": total_cost_with_ftz,
-            "cost_without_ftz": total_cost_without_ftz,
-            "wc_saving": total_wc_saving,
-            "cta_clicked": "Yes",
-            "cta_name": name,
-            "cta_company": company,
-            "cta_email": email,
-            "cta_phone": phone,
-            "cta_preferred_date": preferred_date.isoformat() if preferred_date else "",
-            "cta_preferred_time": preferred_time.strftime("%H:%M") if preferred_time else "",
-            "cta_message": message,
-        })
-        st.success("✅ Thank you! Your request has been received.\n\n"
-                "MAS FTZ Consultation team will contact you shortly.")
+        # Trim strings for reliable empty-check
+        name_ok = bool(name.strip())
+        company_ok = bool(company.strip())
+        email_ok = bool(email.strip())
+        phone_ok = bool(phone.strip())
+        message_ok = bool(message.strip())
+
+        # date_input/time_input always return values, but we still guard just in case
+        date_ok = preferred_date is not None
+        time_ok = preferred_time is not None
+
+        if not (name_ok and company_ok and email_ok and phone_ok and message_ok and date_ok and time_ok):
+            st.error("Please fill all mandatory fields (*) before submitting.")
+        else:
+            if submit:
+                log_to_google_sheets({
+                    "session_id": st.session_state.session_id,
+                    "net_savings": net_savings_to_brand,
+                    "cost_with_ftz": total_cost_with_ftz,
+                    "cost_without_ftz": total_cost_without_ftz,
+                    "wc_saving": total_wc_saving,
+                    "cta_clicked": "Yes",
+                    "cta_name": name,
+                    "cta_company": company,
+                    "cta_email": email,
+                    "cta_phone": phone,
+                    "cta_preferred_date": preferred_date.isoformat() if preferred_date else "",
+                    "cta_preferred_time": preferred_time.strftime("%H:%M") if preferred_time else "",
+                    "cta_message": message,
+                })
+                st.success("✅ Thank you! Your request has been received.\n\n"
+                        "MAS FTZ Consultation team will contact you shortly.")
         
     # # --- SECOND SEGMENT: Book a Consultation (with person icon) ---
     # st.markdown(
